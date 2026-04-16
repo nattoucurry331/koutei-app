@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Project } from '../../types';
-import { exportPDF, fitsOnA4Landscape, type PdfOptions } from '../../utils/pdf';
+import { exportPDF, type PdfOptions } from '../../utils/pdf';
+import { detectFit, PX_PER_MM } from '../../utils/pdfLayout';
+import { A4Preview } from './A4Preview';
 import './PDFPreview.css';
 
 interface Props {
@@ -11,16 +13,29 @@ interface Props {
 
 type Mode = PdfOptions['mode'];
 
+const PAGE_W_MM = 297;
+const PAGE_H_MM = 210;
+const MARGIN_MM = 8;
+
 export function PDFPreview({ project, ganttEl, onClose }: Props) {
   const [mode, setMode] = useState<Mode>('fit');
+  const [autoBalance, setAutoBalance] = useState(true);
   const [withCover, setWithCover] = useState(false);
   const [selfCompany, setSelfCompany] = useState('');
   const [assignee, setAssignee] = useState('');
   const [exporting, setExporting] = useState(false);
-  const [fits, setFits] = useState(true);
 
-  useEffect(() => {
-    if (ganttEl) setFits(fitsOnA4Landscape(ganttEl));
+  // 収まり判定
+  const fit = useMemo(() => {
+    if (!ganttEl) return null;
+    return detectFit({
+      chartW_px: ganttEl.scrollWidth,
+      chartH_px: ganttEl.scrollHeight,
+      pageW_mm: PAGE_W_MM,
+      pageH_mm: PAGE_H_MM,
+      margin_mm: MARGIN_MM,
+      autoBalance: false,
+    });
   }, [ganttEl]);
 
   const handleDownload = async () => {
@@ -35,6 +50,8 @@ export function PDFPreview({ project, ganttEl, onClose }: Props) {
         withCover,
         selfCompany: selfCompany || undefined,
         assignee: assignee || undefined,
+        autoBalance,
+        marginMm: MARGIN_MM,
       });
       onClose();
     } catch (e) {
@@ -44,120 +61,165 @@ export function PDFPreview({ project, ganttEl, onClose }: Props) {
     }
   };
 
+  const fitsOnPage = fit?.fitsWithoutStretch ?? true;
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal pdf-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal pdf-modal pdf-modal-wide" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">PDF出力プレビュー</div>
-        <div className="modal-body pdf-body">
-          {/* 収まり判定 */}
-          <div className={'pdf-fit-status ' + (fits ? 'is-ok' : 'is-overflow')}>
-            {fits ? (
-              <>
-                <strong>✓ A4横1枚に収まります。</strong>
-                <span>そのまま出力できます。</span>
-              </>
-            ) : (
-              <>
-                <strong>⚠ A4横1枚に収まりません。</strong>
-                <span>出力モードを選んでください。</span>
-              </>
-            )}
-          </div>
-
-          {/* モード選択 */}
-          {!fits && (
-            <div className="pdf-options">
-              <label className="pdf-option">
-                <input
-                  type="radio"
-                  name="mode"
-                  checked={mode === 'week'}
-                  onChange={() => setMode('week')}
-                />
-                <div>
-                  <div className="pdf-option-title">A. 週単位に圧縮して1枚</div>
-                  <div className="pdf-option-desc">
-                    画面が日単位でも、PDF出力時だけ週単位に変換して1枚にまとめます。全体俯瞰向け。
-                  </div>
-                </div>
-              </label>
-              <label className="pdf-option">
-                <input
-                  type="radio"
-                  name="mode"
-                  checked={mode === 'month'}
-                  onChange={() => setMode('month')}
-                />
-                <div>
-                  <div className="pdf-option-title">B. 月ごとに分割して複数ページ</div>
-                  <div className="pdf-option-desc">
-                    日単位のまま、月で改ページして複数枚に分けます。各ページに工種リストを再掲載。
-                  </div>
-                </div>
-              </label>
-              <label className="pdf-option">
-                <input
-                  type="radio"
-                  name="mode"
-                  checked={mode === 'long'}
-                  onChange={() => setMode('long')}
-                />
-                <div>
-                  <div className="pdf-option-title">C. 横長PDF (非推奨)</div>
-                  <div className="pdf-option-desc">
-                    A4高さで横幅のみ延長します。画面閲覧用。印刷には不向き。
-                  </div>
-                </div>
-              </label>
+        <div className="modal-body pdf-body-wide">
+          {/* === 左側: 設定 === */}
+          <div className="pdf-settings">
+            {/* 収まり判定 */}
+            <div className={'pdf-fit-status ' + (fitsOnPage ? 'is-ok' : 'is-overflow')}>
+              {fitsOnPage ? (
+                <>
+                  <strong>✓ A4横1枚に収まります</strong>
+                  <span>
+                    {fit && fit.whitespaceRatio > 0.3
+                      ? `余白が約${Math.round(fit.whitespaceRatio * 100)}%あります。「自動バランス調整」で見栄えを良くできます。`
+                      : 'バランスよく配置されます。'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <strong>⚠ A4横1枚に収まりません</strong>
+                  <span>下から出力モードを選んでください。</span>
+                </>
+              )}
             </div>
-          )}
 
-          {fits && (
-            <div className="pdf-options">
-              <label className="pdf-option is-default">
-                <input type="radio" name="mode" checked={mode === 'fit'} onChange={() => setMode('fit')} />
-                <div>
-                  <div className="pdf-option-title">A4横 1枚で出力</div>
-                </div>
-              </label>
-            </div>
-          )}
-
-          {/* 表紙オプション */}
-          <div className="pdf-cover-section">
-            <label className="pdf-cover-toggle">
+            {/* 自動バランス */}
+            <label className="pdf-toggle">
               <input
                 type="checkbox"
-                checked={withCover}
-                onChange={(e) => setWithCover(e.target.checked)}
+                checked={autoBalance}
+                onChange={(e) => setAutoBalance(e.target.checked)}
               />
-              <span>表紙ページを追加(A4縦)</span>
-            </label>
-
-            {withCover && (
-              <div className="pdf-cover-fields">
-                <div>
-                  <label className="label">自社名</label>
-                  <input
-                    className="input"
-                    value={selfCompany}
-                    onChange={(e) => setSelfCompany(e.target.value)}
-                    placeholder="例: ○○建設"
-                  />
-                </div>
-                <div>
-                  <label className="label">担当者名</label>
-                  <input
-                    className="input"
-                    value={assignee}
-                    onChange={(e) => setAssignee(e.target.value)}
-                    placeholder="例: 山田 太郎"
-                  />
-                </div>
-                <div className="pdf-cover-hint">
-                  表紙には現場名・元請会社・工期・備考が自動的に入ります。
+              <div>
+                <div className="pdf-toggle-title">余白を自動調整(推奨)</div>
+                <div className="pdf-toggle-desc">
+                  情報量が少ない時は、最大30%まで広げて余白を減らします。
                 </div>
               </div>
+            </label>
+
+            {/* モード選択 (収まらない時のみ) */}
+            {!fitsOnPage && (
+              <div className="pdf-options">
+                <div className="pdf-options-label">出力モード</div>
+                <label className="pdf-option">
+                  <input
+                    type="radio"
+                    name="mode"
+                    checked={mode === 'fit'}
+                    onChange={() => setMode('fit')}
+                  />
+                  <div>
+                    <div className="pdf-option-title">そのまま縮小して1枚</div>
+                    <div className="pdf-option-desc">
+                      アスペクト比保持で縮小。文字が小さくなる場合あり。
+                    </div>
+                  </div>
+                </label>
+                <label className="pdf-option">
+                  <input
+                    type="radio"
+                    name="mode"
+                    checked={mode === 'week'}
+                    onChange={() => setMode('week')}
+                  />
+                  <div>
+                    <div className="pdf-option-title">A. 週単位に圧縮して1枚</div>
+                    <div className="pdf-option-desc">
+                      日表示でも週単位で出力。全体俯瞰向け。
+                    </div>
+                  </div>
+                </label>
+                <label className="pdf-option">
+                  <input
+                    type="radio"
+                    name="mode"
+                    checked={mode === 'month'}
+                    onChange={() => setMode('month')}
+                  />
+                  <div>
+                    <div className="pdf-option-title">B. 月ごとに分割して複数ページ</div>
+                    <div className="pdf-option-desc">
+                      日単位のまま月で改ページ。各ページに工種列を再掲。
+                    </div>
+                  </div>
+                </label>
+                <label className="pdf-option">
+                  <input
+                    type="radio"
+                    name="mode"
+                    checked={mode === 'long'}
+                    onChange={() => setMode('long')}
+                  />
+                  <div>
+                    <div className="pdf-option-title">C. 横長PDF (非推奨)</div>
+                    <div className="pdf-option-desc">
+                      A4高さで横幅延長。画面閲覧用、印刷不向き。
+                    </div>
+                  </div>
+                </label>
+              </div>
+            )}
+
+            {/* 表紙オプション */}
+            <div className="pdf-cover-section">
+              <label className="pdf-toggle">
+                <input
+                  type="checkbox"
+                  checked={withCover}
+                  onChange={(e) => setWithCover(e.target.checked)}
+                />
+                <div>
+                  <div className="pdf-toggle-title">表紙ページを追加(A4縦)</div>
+                  <div className="pdf-toggle-desc">
+                    元請提出向け。現場名・工期・備考を1枚目に。
+                  </div>
+                </div>
+              </label>
+              {withCover && (
+                <div className="pdf-cover-fields">
+                  <div>
+                    <label className="label">自社名</label>
+                    <input
+                      className="input"
+                      value={selfCompany}
+                      onChange={(e) => setSelfCompany(e.target.value)}
+                      placeholder="例: ○○建設"
+                    />
+                  </div>
+                  <div>
+                    <label className="label">担当者名</label>
+                    <input
+                      className="input"
+                      value={assignee}
+                      onChange={(e) => setAssignee(e.target.value)}
+                      placeholder="例: 山田 太郎"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* === 右側: A4実物大プレビュー === */}
+          <div className="pdf-preview-pane">
+            <div className="pdf-preview-label">印刷プレビュー (A4横)</div>
+            {ganttEl ? (
+              <A4Preview
+                ganttEl={ganttEl}
+                autoBalance={autoBalance}
+                pageW_mm={PAGE_W_MM}
+                pageH_mm={PAGE_H_MM}
+                margin_mm={MARGIN_MM}
+              />
+            ) : (
+              <div className="pdf-preview-empty">プレビュー読み込み中…</div>
             )}
           </div>
         </div>
