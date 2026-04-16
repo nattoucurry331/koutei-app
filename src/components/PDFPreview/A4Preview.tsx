@@ -78,6 +78,30 @@ export function A4Preview({ ganttEl, autoBalance, pageW_mm, pageH_mm, margin_mm 
       const cs = window.getComputedStyle(el);
       if (cs.position === 'sticky') el.style.position = 'static';
     });
+
+    // textarea/input もPDFと同じ「div置換」を適用してプレビューを一致させる
+    const origTextareas = ganttEl.querySelectorAll<HTMLTextAreaElement>(
+      'textarea.print-title, textarea.print-memo'
+    );
+    const cloneTextareas = clone.querySelectorAll<HTMLTextAreaElement>(
+      'textarea.print-title, textarea.print-memo'
+    );
+    cloneTextareas.forEach((cTa, i) => {
+      const oTa = origTextareas[i];
+      const div = document.createElement('div');
+      div.className = cTa.className;
+      div.textContent = cTa.value;
+      const h = oTa ? oTa.offsetHeight : cTa.offsetHeight;
+      div.style.minHeight = `${h}px`;
+      div.style.boxSizing = 'border-box';
+      div.style.whiteSpace = 'pre-wrap';
+      div.style.wordBreak = 'break-word';
+      div.style.overflowWrap = 'anywhere';
+      div.style.overflow = 'hidden';
+      if (cTa.classList.contains('print-title')) div.style.textAlign = 'center';
+      cTa.parentNode?.replaceChild(div, cTa);
+    });
+
     inner.appendChild(clone);
 
     frameRef.current.appendChild(inner);

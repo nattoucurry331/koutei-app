@@ -21,11 +21,62 @@ export interface PdfOptions {
  * - 編集用UI(ドラッグハンドル / 並び替え/削除ボタン / 色チップ)を非表示
  * - 編集用日付inputを隠して、フォーマット済みの日本語表示に置換
  * - 入力欄の枠やプレースホルダ色を消して印刷用に整える
+ * - <textarea> / <input> はhtml2canvasでテキスト位置がズレるので <div>/<span> に置換
  */
-function applyPrintMode(clonedDoc: Document) {
+function applyPrintMode(clonedDoc: Document, originalEl: HTMLElement) {
   // クローンしたprint-areaに .is-printing を付与 (CSSで切替)
   const root = clonedDoc.querySelector('.print-area') as HTMLElement | null;
   if (root) root.classList.add('is-printing');
+
+  // === <textarea> を <div> に置換 ===
+  // html2canvas は <textarea> の文字位置を正しく描画できない既知の問題があるため、
+  // 同じスタイルを持つ <div> に置き換えてからキャプチャする。
+  // 高さ等のサイズは、元(キャプチャ前)のDOMから測定する。
+  const originalTextareas = originalEl.querySelectorAll<HTMLTextAreaElement>('textarea.print-title, textarea.print-memo');
+  const clonedTextareas = clonedDoc.querySelectorAll<HTMLTextAreaElement>('textarea.print-title, textarea.print-memo');
+  clonedTextareas.forEach((cloned, i) => {
+    const original = originalTextareas[i];
+    const div = clonedDoc.createElement('div');
+    div.className = cloned.className;
+    div.textContent = cloned.value;
+    // 元のtextareaの寸法を継承
+    const h = original ? original.offsetHeight : cloned.offsetHeight;
+    div.style.minHeight = `${h}px`;
+    div.style.boxSizing = 'border-box';
+    div.style.whiteSpace = 'pre-wrap';
+    div.style.wordBreak = 'break-word';
+    div.style.overflowWrap = 'anywhere';
+    div.style.overflow = 'hidden';
+    // タイトルのみ中央寄せ維持 (CSS class で当たるが念のため)
+    if (cloned.classList.contains('print-title')) {
+      div.style.textAlign = 'center';
+    }
+    cloned.parentNode?.replaceChild(div, cloned);
+  });
+
+  // === <input type="text"> も <span> に置換 ===
+  // 縦位置のズレを回避
+  const originalInputs = originalEl.querySelectorAll<HTMLInputElement>(
+    'input.print-meta-input:not([type="date"])'
+  );
+  const clonedInputs = clonedDoc.querySelectorAll<HTMLInputElement>(
+    'input.print-meta-input:not([type="date"])'
+  );
+  clonedInputs.forEach((cloned, i) => {
+    const original = originalInputs[i];
+    const span = clonedDoc.createElement('span');
+    span.className = cloned.className;
+    span.textContent = cloned.value;
+    span.style.display = 'inline-block';
+    if (original) {
+      span.style.minWidth = `${original.offsetWidth}px`;
+      span.style.minHeight = `${original.offsetHeight}px`;
+      span.style.lineHeight = `${original.offsetHeight}px`;
+    }
+    span.style.boxSizing = 'border-box';
+    span.style.verticalAlign = 'middle';
+    cloned.parentNode?.replaceChild(span, cloned);
+  });
 }
 
 async function captureElement(el: HTMLElement): Promise<{ dataUrl: string; w: number; h: number }> {
@@ -34,7 +85,7 @@ async function captureElement(el: HTMLElement): Promise<{ dataUrl: string; w: nu
     scale: 2,
     useCORS: true,
     logging: false,
-    onclone: (doc) => applyPrintMode(doc),
+    onclone: (doc) => applyPrintMode(doc, el),
   });
   return { dataUrl: canvas.toDataURL('image/png'), w: canvas.width, h: canvas.height };
 }
@@ -112,7 +163,7 @@ async function renderMonthSplit(
     scale: 2,
     useCORS: true,
     logging: false,
-    onclone: (doc) => applyPrintMode(doc),
+    onclone: (doc) => applyPrintMode(doc, printAreaEl),
   });
 
   // ガント部分の月セルを取得
