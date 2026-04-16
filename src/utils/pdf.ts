@@ -16,15 +16,31 @@ export interface PdfOptions {
   marginMm?: number;
 }
 
-async function captureGantt(ganttEl: HTMLElement): Promise<{ dataUrl: string; w: number; h: number }> {
-  const canvas = await html2canvas(ganttEl, {
+/**
+ * html2canvas のクローン後フック:
+ * - 編集用UI(ドラッグハンドル / 並び替え/削除ボタン / 色チップ)を非表示
+ * - 編集用日付inputを隠して、フォーマット済みの日本語表示に置換
+ * - 入力欄の枠やプレースホルダ色を消して印刷用に整える
+ */
+function applyPrintMode(clonedDoc: Document) {
+  // クローンしたprint-areaに .is-printing を付与 (CSSで切替)
+  const root = clonedDoc.querySelector('.print-area') as HTMLElement | null;
+  if (root) root.classList.add('is-printing');
+}
+
+async function captureElement(el: HTMLElement): Promise<{ dataUrl: string; w: number; h: number }> {
+  const canvas = await html2canvas(el, {
     backgroundColor: '#ffffff',
     scale: 2,
     useCORS: true,
     logging: false,
+    onclone: (doc) => applyPrintMode(doc),
   });
   return { dataUrl: canvas.toDataURL('image/png'), w: canvas.width, h: canvas.height };
 }
+
+// 旧名互換
+const captureGantt = captureElement;
 
 /** PageLayout に従って画像をPDFページに配置 */
 function placeWithLayout(pdf: jsPDF, dataUrl: string, layout: PageLayout) {
@@ -96,6 +112,7 @@ async function renderMonthSplit(
     scale: 2,
     useCORS: true,
     logging: false,
+    onclone: (doc) => applyPrintMode(doc),
   });
 
   // ガント部分の月セルを取得

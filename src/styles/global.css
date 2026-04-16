@@ -37,9 +37,9 @@
     'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic UI', Meiryo, sans-serif;
   --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 
-  --row-height: 38px;
+  --row-height: 42px;
   --col-width: 32px;
-  --task-name-width: 240px;
+  --task-name-width: 280px;
 }
 
 * {

@@ -3,6 +3,7 @@ import type { Project, Task, TimeUnit } from '../../types';
 import { TASK_COLOR_PALETTE } from '../../types';
 import { uid } from '../../utils/storage';
 import { TASK_PRESETS } from '../../utils/presets';
+import { formatJPLong, diffDays } from '../../utils/dates';
 import { GanttChart } from '../GanttChart/GanttChart';
 import { ShareExport } from '../ShareExport/ShareExport';
 import './ProjectEditor.css';
@@ -15,6 +16,13 @@ const PDFPreview = lazy(() =>
 interface Props {
   project: Project;
   onChange: (project: Project) => void;
+}
+
+function formatDateShort(iso: string): string {
+  if (!iso) return '';
+  const d = iso.slice(0, 10).split('-');
+  if (d.length !== 3) return iso.slice(0, 10);
+  return `${d[0]}/${parseInt(d[1], 10)}/${parseInt(d[2], 10)}`;
 }
 
 export function ProjectEditor({ project, onChange }: Props) {
@@ -38,6 +46,16 @@ export function ProjectEditor({ project, onChange }: Props) {
   const handleAddTask = () => addTaskWithName('新しい工種');
   const handleUpdateTasks = (tasks: Task[]) => updateField('tasks', tasks);
   const handleUnitChange = (u: TimeUnit) => updateField('unit', u);
+
+  // 工期日数 (両端含む)
+  const periodDays =
+    project.startDate && project.endDate
+      ? Math.max(0, diffDays(project.startDate, project.endDate)) + 1
+      : 0;
+  const periodDisplay =
+    project.startDate && project.endDate
+      ? `${formatJPLong(project.startDate)} 〜 ${formatJPLong(project.endDate)} (${periodDays}日間)`
+      : '';
 
   return (
     <div className="project-editor">
@@ -76,17 +94,30 @@ export function ProjectEditor({ project, onChange }: Props) {
       {/* === 印刷エリア (これがPDFになる) === */}
       <div className="print-area-scroll">
         <div ref={printAreaRef} className="print-area">
-          {/* 印刷ヘッダー: 現場名・元請・工期 */}
-          <div className="print-header">
+          {/* 印刷ヘッダー */}
+          <header className="print-header">
+            {/* 上段: 「工程表」ラベル + 作成/更新日 */}
+            <div className="print-header-top">
+              <span className="print-doc-label">工 程 表</span>
+              <span className="print-doc-dates">
+                <span>作成 {formatDateShort(project.createdAt)}</span>
+                <span className="print-doc-dates-sep">/</span>
+                <span>更新 {formatDateShort(project.updatedAt)}</span>
+              </span>
+            </div>
+
+            {/* タイトル(中央寄せ・大きく) */}
             <input
               className="print-title"
               value={project.name}
               onChange={(e) => updateField('name', e.target.value)}
-              placeholder="現場名・工事名"
+              placeholder="現場名・工事名を入力"
             />
+
+            {/* メタ行(中央寄せ) */}
             <div className="print-meta-row">
               <div className="print-meta-field">
-                <span className="print-meta-label">元請</span>
+                <span className="print-meta-label">元請会社</span>
                 <input
                   className="print-meta-input"
                   value={project.contractor}
@@ -94,24 +125,31 @@ export function ProjectEditor({ project, onChange }: Props) {
                   placeholder="元請会社名"
                 />
               </div>
-              <div className="print-meta-field">
+              <div className="print-meta-field print-meta-period">
                 <span className="print-meta-label">工期</span>
-                <input
-                  type="date"
-                  className="print-meta-input print-meta-date"
-                  value={project.startDate}
-                  onChange={(e) => updateField('startDate', e.target.value)}
-                />
-                <span className="print-meta-sep">〜</span>
-                <input
-                  type="date"
-                  className="print-meta-input print-meta-date"
-                  value={project.endDate}
-                  onChange={(e) => updateField('endDate', e.target.value)}
-                />
+                {/* 編集用: date inputs (PDFでは非表示にしてフォーマット済みspanで置換) */}
+                <span className="print-meta-period-edit">
+                  <input
+                    type="date"
+                    className="print-meta-input print-meta-date"
+                    value={project.startDate}
+                    onChange={(e) => updateField('startDate', e.target.value)}
+                  />
+                  <span className="print-meta-sep">〜</span>
+                  <input
+                    type="date"
+                    className="print-meta-input print-meta-date"
+                    value={project.endDate}
+                    onChange={(e) => updateField('endDate', e.target.value)}
+                  />
+                </span>
+                {/* 印刷専用: 日本語フォーマット済み(エディタでは非表示) */}
+                <span className="print-only-period" data-print-display={periodDisplay}>
+                  {periodDisplay}
+                </span>
               </div>
             </div>
-          </div>
+          </header>
 
           {/* ガントチャート */}
           <GanttChart
@@ -123,7 +161,7 @@ export function ProjectEditor({ project, onChange }: Props) {
           />
 
           {/* 印刷フッター: 備考 */}
-          <div className="print-footer">
+          <footer className="print-footer">
             <div className="print-footer-label">備考</div>
             <textarea
               className="print-memo"
@@ -132,7 +170,7 @@ export function ProjectEditor({ project, onChange }: Props) {
               placeholder="工程全体に関するメモ・注意事項・連絡先などを記載..."
               rows={3}
             />
-          </div>
+          </footer>
         </div>
       </div>
 

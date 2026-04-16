@@ -69,6 +69,8 @@ export function A4Preview({ ganttEl, autoBalance, pageW_mm, pageH_mm, margin_mm 
     `;
 
     const clone = ganttEl.cloneNode(true) as HTMLElement;
+    // 印刷モードクラスを付与: 編集UIを非表示にし、フォーマット済み日付に切替
+    clone.classList.add('is-printing');
     // クローン側でstickyやscrollを無効化(プレビュー描画の歪み防止)
     clone.style.position = 'static';
     clone.style.overflow = 'visible';
