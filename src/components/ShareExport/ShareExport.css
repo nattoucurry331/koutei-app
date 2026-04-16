@@ -1,0 +1,63 @@
+.share-modal {
+  max-width: 480px;
+}
+
+.share-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.share-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.share-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.share-check:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+.share-check input {
+  margin-top: 3px;
+  cursor: pointer;
+}
+.share-check-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.share-check-value {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  word-break: break-word;
+}
+.share-check-memo {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.share-always {
+  margin-top: 4px;
+  padding: 10px 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+.share-always strong {
+  color: var(--color-text);
+  font-weight: 600;
+  margin-right: 6px;
+}

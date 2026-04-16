@@ -1,0 +1,381 @@
+.gantt-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.gantt-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--color-border);
+  background: white;
+  z-index: 5;
+  flex-wrap: wrap;
+}
+@media (max-width: 600px) {
+  .gantt-toolbar {
+    padding: 10px 14px;
+  }
+  .gantt-hint {
+    display: none;
+  }
+}
+.gantt-hint {
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.unit-switch {
+  display: inline-flex;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  gap: 2px;
+}
+.unit-switch-btn {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  transition: background 0.12s, color 0.12s;
+}
+.unit-switch-btn:hover {
+  color: var(--color-text);
+}
+.unit-switch-btn.is-active {
+  background: white;
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 半日セル: PMの右側にだけ太い境界 */
+.gantt-cell.is-half-am {
+  border-right: 1px dashed var(--color-border);
+}
+.gantt-cell.is-half-pm {
+  border-right: 1px solid var(--color-border);
+}
+.gantt-day-cell.is-half {
+  border-right: 1px dashed var(--color-border);
+}
+.gantt-day-cell .half-label {
+  font-size: 9px;
+  color: var(--color-text-subtle);
+}
+.gantt-week-cell .day-num {
+  font-size: 11px;
+}
+.gantt-week-cell .day-wd {
+  color: var(--color-text-subtle);
+}
+
+/* D&D 並び替え */
+.task-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 24px;
+  font-size: 10px;
+  color: var(--color-text-subtle);
+  cursor: grab;
+  border-radius: 3px;
+  letter-spacing: -2px;
+  font-family: monospace;
+  margin-right: 2px;
+}
+.task-drag-handle:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.task-drag-handle:active {
+  cursor: grabbing;
+}
+.gantt-task-row.is-dragging {
+  opacity: 0.4;
+}
+.gantt-drop-line {
+  height: 2px;
+  background: var(--color-primary);
+  margin: 0;
+  pointer-events: none;
+}
+.gantt-drop-target {
+  text-align: center;
+  padding: 12px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  margin: 8px 16px;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+.gantt-drop-target.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.gantt-empty {
+  padding: 60px 24px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.gantt-scroll {
+  flex: 1;
+  overflow: auto;
+  background: var(--color-surface);
+}
+
+.gantt-table {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  font-size: 13px;
+  user-select: none;
+}
+
+.gantt-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+}
+
+.gantt-header-row {
+  background: var(--color-surface);
+  position: sticky;
+  z-index: 3;
+}
+.gantt-header-row:nth-of-type(1) {
+  top: 0;
+}
+.gantt-header-row:nth-of-type(2) {
+  top: 28px; /* 月行の高さ分 */
+}
+
+.gantt-task-name {
+  width: var(--task-name-width);
+  flex: 0 0 var(--task-name-width);
+  background: white;
+  border-right: 1px solid var(--color-border);
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  padding: 6px 10px 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.gantt-corner {
+  background: var(--color-surface);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  z-index: 4;
+  justify-content: center;
+}
+
+.gantt-month-row {
+  display: flex;
+  align-items: stretch;
+  height: 28px;
+}
+.gantt-month-cell {
+  border-right: 1px solid var(--color-border);
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  background: var(--color-surface);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.gantt-cells {
+  display: flex;
+  position: relative;
+}
+
+.gantt-day-cell {
+  width: var(--col-width);
+  flex: 0 0 var(--col-width);
+  height: 36px;
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  background: white;
+}
+.gantt-day-cell .day-num {
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.1;
+}
+.gantt-day-cell .day-wd {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  line-height: 1.2;
+}
+.gantt-day-cell.is-sat { background: var(--color-weekend-sat); }
+.gantt-day-cell.is-sat .day-wd { color: #2563eb; }
+.gantt-day-cell.is-sun { background: var(--color-weekend-sun); }
+.gantt-day-cell.is-sun .day-wd { color: #dc2626; }
+.gantt-day-cell.is-today { box-shadow: inset 0 -2px 0 var(--color-primary); }
+
+.gantt-task-cells {
+  height: var(--row-height);
+  background: white;
+}
+
+.gantt-cell {
+  width: var(--col-width);
+  flex: 0 0 var(--col-width);
+  border-right: 1px solid var(--color-border);
+  cursor: crosshair;
+  background: white;
+  transition: background 0.05s;
+}
+.gantt-cell.is-sat { background: var(--color-weekend-sat); }
+.gantt-cell.is-sun { background: var(--color-weekend-sun); }
+.gantt-cell.is-today { background: linear-gradient(rgba(254, 249, 195, 0.4), rgba(254, 249, 195, 0.4)); }
+.gantt-cell:hover { background: rgba(79, 70, 229, 0.06); }
+
+.gantt-bar {
+  position: absolute;
+  top: 6px;
+  height: calc(var(--row-height) - 12px);
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.1s, box-shadow 0.1s;
+  z-index: 1;
+}
+.gantt-bar:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  filter: brightness(1.05);
+}
+.gantt-bar-draft {
+  position: absolute;
+  top: 6px;
+  height: calc(var(--row-height) - 12px);
+  border-radius: 4px;
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* タスク名セル内の要素 */
+.task-name-inner {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+.task-name-text {
+  text-align: left;
+  width: 100%;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+}
+.task-name-text:hover {
+  background: var(--color-surface);
+}
+.task-name-input {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  outline: none;
+}
+.task-name-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.task-color-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  padding: 0;
+}
+.task-action-btn {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  border-radius: 3px;
+}
+.task-action-btn:hover:not(:disabled) {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.task-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.task-action-delete:hover {
+  background: var(--color-danger-soft) !important;
+  color: var(--color-danger) !important;
+}
+
+.color-picker-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 8px;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  z-index: 10;
+}
+.color-picker-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  padding: 0;
+}
+
+.gantt-empty-row {
+  padding: 32px 24px;
+  text-align: center;
+  color: var(--color-text-muted);
+  background: white;
+}
+.gantt-empty-row p {
+  margin: 0;
+  font-size: 13px;
+}
