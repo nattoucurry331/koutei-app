@@ -7,7 +7,7 @@ import { GanttChart } from '../GanttChart/GanttChart';
 import { ShareExport } from '../ShareExport/ShareExport';
 import './ProjectEditor.css';
 
-// PDFPreview は jsPDF + html2canvas を含む大きなコンポーネントなので遅延ロード
+// PDFPreview は jsPDF + html2canvas を含むので遅延ロード
 const PDFPreview = lazy(() =>
   import('../PDFPreview/PDFPreview').then((m) => ({ default: m.PDFPreview }))
 );
@@ -18,11 +18,10 @@ interface Props {
 }
 
 export function ProjectEditor({ project, onChange }: Props) {
-  const [showInfo, setShowInfo] = useState(true);
   const [showPresets, setShowPresets] = useState(false);
   const [showPDF, setShowPDF] = useState(false);
   const [showShare, setShowShare] = useState(false);
-  const ganttRef = useRef<HTMLDivElement>(null);
+  const printAreaRef = useRef<HTMLDivElement>(null);
 
   const unit: TimeUnit = project.unit ?? 'day';
 
@@ -42,14 +41,29 @@ export function ProjectEditor({ project, onChange }: Props) {
 
   return (
     <div className="project-editor">
-      <div className="editor-info-bar">
-        <button className="btn btn-ghost btn-sm" onClick={() => setShowInfo((v) => !v)}>
-          {showInfo ? '▼' : '▶'} プロジェクト情報
-        </button>
-        <div className="editor-info-actions">
-          <button className="btn btn-sm" onClick={() => setShowPresets(true)}>
-            📋 プリセット工種
+      {/* === 編集ツールバー (PDFには出ない) === */}
+      <div className="editor-toolbar">
+        <div className="editor-toolbar-left">
+          <button className="btn btn-primary btn-sm" onClick={handleAddTask}>
+            + 工種を追加
           </button>
+          <div className="unit-switch" role="tablist" aria-label="表示単位">
+            {(['day', 'half', 'week'] as TimeUnit[]).map((u) => (
+              <button
+                key={u}
+                role="tab"
+                className={'unit-switch-btn' + (unit === u ? ' is-active' : '')}
+                onClick={() => handleUnitChange(u)}
+              >
+                {u === 'day' ? '日' : u === 'half' ? '半日' : '週'}
+              </button>
+            ))}
+          </div>
+          <button className="btn btn-sm" onClick={() => setShowPresets(true)}>
+            📋 プリセット
+          </button>
+        </div>
+        <div className="editor-toolbar-right">
           <button className="btn btn-sm" onClick={() => setShowShare(true)}>
             📤 共有書き出し
           </button>
@@ -59,67 +73,70 @@ export function ProjectEditor({ project, onChange }: Props) {
         </div>
       </div>
 
-      {showInfo && (
-        <div className="editor-info-panel">
-          <div className="info-grid">
-            <div>
-              <label className="label">現場名・工事名</label>
-              <input
-                className="input"
-                value={project.name}
-                onChange={(e) => updateField('name', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="label">元請会社名</label>
-              <input
-                className="input"
-                value={project.contractor}
-                onChange={(e) => updateField('contractor', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="label">工期開始</label>
-              <input
-                type="date"
-                className="input"
-                value={project.startDate}
-                onChange={(e) => updateField('startDate', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="label">工期終了</label>
-              <input
-                type="date"
-                className="input"
-                value={project.endDate}
-                onChange={(e) => updateField('endDate', e.target.value)}
-              />
+      {/* === 印刷エリア (これがPDFになる) === */}
+      <div className="print-area-scroll">
+        <div ref={printAreaRef} className="print-area">
+          {/* 印刷ヘッダー: 現場名・元請・工期 */}
+          <div className="print-header">
+            <input
+              className="print-title"
+              value={project.name}
+              onChange={(e) => updateField('name', e.target.value)}
+              placeholder="現場名・工事名"
+            />
+            <div className="print-meta-row">
+              <div className="print-meta-field">
+                <span className="print-meta-label">元請</span>
+                <input
+                  className="print-meta-input"
+                  value={project.contractor}
+                  onChange={(e) => updateField('contractor', e.target.value)}
+                  placeholder="元請会社名"
+                />
+              </div>
+              <div className="print-meta-field">
+                <span className="print-meta-label">工期</span>
+                <input
+                  type="date"
+                  className="print-meta-input print-meta-date"
+                  value={project.startDate}
+                  onChange={(e) => updateField('startDate', e.target.value)}
+                />
+                <span className="print-meta-sep">〜</span>
+                <input
+                  type="date"
+                  className="print-meta-input print-meta-date"
+                  value={project.endDate}
+                  onChange={(e) => updateField('endDate', e.target.value)}
+                />
+              </div>
             </div>
           </div>
-          <div>
-            <label className="label">全体備考</label>
+
+          {/* ガントチャート */}
+          <GanttChart
+            startDate={project.startDate}
+            endDate={project.endDate}
+            tasks={project.tasks}
+            unit={unit}
+            onTasksChange={handleUpdateTasks}
+          />
+
+          {/* 印刷フッター: 備考 */}
+          <div className="print-footer">
+            <div className="print-footer-label">備考</div>
             <textarea
-              className="textarea"
+              className="print-memo"
               value={project.memo}
               onChange={(e) => updateField('memo', e.target.value)}
-              placeholder="工程全体に関するメモを記載..."
+              placeholder="工程全体に関するメモ・注意事項・連絡先などを記載..."
+              rows={3}
             />
           </div>
         </div>
-      )}
+      </div>
 
-      <GanttChart
-        startDate={project.startDate}
-        endDate={project.endDate}
-        tasks={project.tasks}
-        unit={unit}
-        onTasksChange={handleUpdateTasks}
-        onAddTask={handleAddTask}
-        onUnitChange={handleUnitChange}
-        tableRef={ganttRef}
-      />
-
+      {/* === モーダル群 === */}
       {showPresets && (
         <div className="modal-backdrop" onClick={() => setShowPresets(false)}>
           <div className="modal preset-modal" onClick={(e) => e.stopPropagation()}>
@@ -152,8 +169,20 @@ export function ProjectEditor({ project, onChange }: Props) {
       )}
 
       {showPDF && (
-        <Suspense fallback={<div className="modal-backdrop"><div className="modal" style={{padding: '24px', textAlign: 'center'}}>PDF機能を読み込み中…</div></div>}>
-          <PDFPreview project={project} ganttEl={ganttRef.current} onClose={() => setShowPDF(false)} />
+        <Suspense
+          fallback={
+            <div className="modal-backdrop">
+              <div className="modal" style={{ padding: '24px', textAlign: 'center' }}>
+                PDF機能を読み込み中…
+              </div>
+            </div>
+          }
+        >
+          <PDFPreview
+            project={project}
+            ganttEl={printAreaRef.current}
+            onClose={() => setShowPDF(false)}
+          />
         </Suspense>
       )}
 

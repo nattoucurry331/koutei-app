@@ -5,22 +5,225 @@
   min-height: 0;
 }
 
-.editor-info-bar {
+/* === 編集ツールバー (印刷されない) === */
+.editor-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 10px 24px;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  gap: 12px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.editor-toolbar-left,
+.editor-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-.editor-info-actions {
-  display: flex;
-  gap: 8px;
+.unit-switch {
+  display: inline-flex;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  gap: 2px;
+}
+.unit-switch-btn {
+  padding: 5px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  transition: background 0.12s, color 0.12s;
+}
+.unit-switch-btn:hover {
+  color: var(--color-text);
+}
+.unit-switch-btn.is-active {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
 }
 
+@media (max-width: 600px) {
+  .editor-toolbar {
+    padding: 10px 14px;
+  }
+  .editor-toolbar-left,
+  .editor-toolbar-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* === 印刷エリア === */
+.print-area-scroll {
+  flex: 1;
+  overflow: auto;
+  background: var(--color-surface);
+  padding: 24px;
+}
+
+.print-area {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  padding: 28px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* 横スクロール対応: ガントが広いとき print-area も広く */
+  width: max-content;
+  min-width: calc(100% - 0px);
+}
+
+@media (max-width: 600px) {
+  .print-area-scroll {
+    padding: 12px;
+  }
+  .print-area {
+    padding: 18px 16px 14px;
+    gap: 14px;
+  }
+}
+
+/* === 印刷ヘッダー === */
+.print-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--color-text);
+}
+
+.print-title {
+  width: 100%;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  outline: none;
+  letter-spacing: 0.01em;
+  transition: background 0.1s, border-color 0.1s;
+}
+.print-title:hover {
+  background: var(--color-surface);
+}
+.print-title:focus {
+  background: white;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+}
+.print-title::placeholder {
+  color: var(--color-text-subtle);
+  font-weight: 500;
+}
+
+.print-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding: 0 8px;
+  font-size: 13px;
+  color: var(--color-text);
+}
+.print-meta-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.print-meta-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+.print-meta-input {
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--color-text);
+  font-family: inherit;
+  outline: none;
+  min-width: 140px;
+  transition: background 0.1s, border-color 0.1s;
+}
+.print-meta-input:hover {
+  background: var(--color-surface);
+}
+.print-meta-input:focus {
+  background: white;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+}
+.print-meta-input::placeholder {
+  color: var(--color-text-subtle);
+}
+.print-meta-date {
+  min-width: 130px;
+}
+.print-meta-sep {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+/* === 印刷フッター (備考) === */
+.print-footer {
+  border-top: 1px solid var(--color-border);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.print-footer-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.print-memo {
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--color-text);
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  min-height: 56px;
+  transition: background 0.1s, border-color 0.1s;
+  white-space: pre-wrap;
+}
+.print-memo:hover {
+  background: var(--color-surface);
+}
+.print-memo:focus {
+  background: white;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+}
+.print-memo::placeholder {
+  color: var(--color-text-subtle);
+}
+
+/* === プリセット モーダル === */
 .preset-modal {
   max-width: 600px;
 }
@@ -57,44 +260,4 @@
   background: var(--color-primary-soft);
   border-color: var(--color-primary);
   color: var(--color-primary);
-}
-
-.editor-info-panel {
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--color-border);
-  background: white;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr 1fr;
-  gap: 16px;
-}
-
-@media (max-width: 900px) {
-  .info-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .editor-info-panel {
-    padding: 16px;
-  }
-  .editor-info-bar {
-    padding: 10px 14px;
-  }
-}
-
-@media (max-width: 600px) {
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-  .editor-info-actions {
-    flex-wrap: wrap;
-  }
-  .editor-info-actions .btn {
-    flex: 1 1 0;
-    min-width: 0;
-  }
 }

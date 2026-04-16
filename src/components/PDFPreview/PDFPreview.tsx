@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Project } from '../../types';
 import { exportPDF, type PdfOptions } from '../../utils/pdf';
-import { detectFit, PX_PER_MM } from '../../utils/pdfLayout';
+import { detectFit } from '../../utils/pdfLayout';
 import { A4Preview } from './A4Preview';
 import './PDFPreview.css';
 
@@ -20,9 +20,6 @@ const MARGIN_MM = 8;
 export function PDFPreview({ project, ganttEl, onClose }: Props) {
   const [mode, setMode] = useState<Mode>('fit');
   const [autoBalance, setAutoBalance] = useState(true);
-  const [withCover, setWithCover] = useState(false);
-  const [selfCompany, setSelfCompany] = useState('');
-  const [assignee, setAssignee] = useState('');
   const [exporting, setExporting] = useState(false);
 
   // 収まり判定
@@ -40,16 +37,13 @@ export function PDFPreview({ project, ganttEl, onClose }: Props) {
 
   const handleDownload = async () => {
     if (!ganttEl) {
-      alert('ガントチャートが見つかりません');
+      alert('印刷エリアが見つかりません');
       return;
     }
     setExporting(true);
     try {
       await exportPDF(ganttEl, project, {
         mode,
-        withCover,
-        selfCompany: selfCompany || undefined,
-        assignee: assignee || undefined,
         autoBalance,
         marginMm: MARGIN_MM,
       });
@@ -77,7 +71,7 @@ export function PDFPreview({ project, ganttEl, onClose }: Props) {
                   <strong>✓ A4横1枚に収まります</strong>
                   <span>
                     {fit && fit.whitespaceRatio > 0.3
-                      ? `余白が約${Math.round(fit.whitespaceRatio * 100)}%あります。「自動バランス調整」で見栄えを良くできます。`
+                      ? `余白が約${Math.round(fit.whitespaceRatio * 100)}%。「自動バランス調整」で見栄えが良くなります。`
                       : 'バランスよく配置されます。'}
                   </span>
                 </>
@@ -99,7 +93,7 @@ export function PDFPreview({ project, ganttEl, onClose }: Props) {
               <div>
                 <div className="pdf-toggle-title">余白を自動調整(推奨)</div>
                 <div className="pdf-toggle-desc">
-                  情報量が少ない時は、最大30%まで広げて余白を減らします。
+                  情報量が少ない時、最大30%まで広げて余白を減らします。
                 </div>
               </div>
             </label>
@@ -166,45 +160,6 @@ export function PDFPreview({ project, ganttEl, onClose }: Props) {
                 </label>
               </div>
             )}
-
-            {/* 表紙オプション */}
-            <div className="pdf-cover-section">
-              <label className="pdf-toggle">
-                <input
-                  type="checkbox"
-                  checked={withCover}
-                  onChange={(e) => setWithCover(e.target.checked)}
-                />
-                <div>
-                  <div className="pdf-toggle-title">表紙ページを追加(A4縦)</div>
-                  <div className="pdf-toggle-desc">
-                    元請提出向け。現場名・工期・備考を1枚目に。
-                  </div>
-                </div>
-              </label>
-              {withCover && (
-                <div className="pdf-cover-fields">
-                  <div>
-                    <label className="label">自社名</label>
-                    <input
-                      className="input"
-                      value={selfCompany}
-                      onChange={(e) => setSelfCompany(e.target.value)}
-                      placeholder="例: ○○建設"
-                    />
-                  </div>
-                  <div>
-                    <label className="label">担当者名</label>
-                    <input
-                      className="input"
-                      value={assignee}
-                      onChange={(e) => setAssignee(e.target.value)}
-                      placeholder="例: 山田 太郎"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
 
           {/* === 右側: A4実物大プレビュー === */}
