@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { Project, Task, TimeUnit } from '../../types';
 import { TASK_COLOR_PALETTE } from '../../types';
 import { uid } from '../../utils/storage';
@@ -30,6 +30,38 @@ export function ProjectEditor({ project, onChange }: Props) {
   const [showPDF, setShowPDF] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const printAreaRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+
+  // タイトル: 内容変更時に高さ調整
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [project.name]);
+
+  // タイトル: 印刷エリア幅が変わったら(単位切替・ウィンドウサイズ変更等)再計算
+  useEffect(() => {
+    const el = titleRef.current;
+    const printArea = printAreaRef.current;
+    if (!el || !printArea) return;
+    let rafId = 0;
+    const update = () => {
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    };
+    const onResize = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(update);
+    };
+    update();
+    const ro = new ResizeObserver(onResize);
+    ro.observe(printArea);
+    return () => {
+      cancelAnimationFrame(rafId);
+      ro.disconnect();
+    };
+  }, []);
 
   const unit: TimeUnit = project.unit ?? 'day';
 
@@ -106,12 +138,22 @@ export function ProjectEditor({ project, onChange }: Props) {
               </span>
             </div>
 
-            {/* タイトル(中央寄せ・大きく) */}
-            <input
+            {/* タイトル(中央寄せ・大きく・複数行自動対応) */}
+            <textarea
+              ref={titleRef}
               className="print-title"
               value={project.name}
               onChange={(e) => updateField('name', e.target.value)}
               placeholder="現場名・工事名を入力"
+              rows={1}
+              spellCheck={false}
+              onKeyDown={(e) => {
+                // Enter で改行を許可しない (シンプルな1〜2行タイトルとして使う)
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.currentTarget.blur();
+                }
+              }}
             />
 
             {/* メタ行(中央寄せ) */}
