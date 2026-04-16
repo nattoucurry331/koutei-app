@@ -110,10 +110,10 @@ export function ProjectList({ projects, onOpen, onCreate, onDelete, onImport, on
       {projects.length === 0 ? (
         <div className="landing">
           <div className="landing-hero">
-            <div className="landing-badge">建設業の工程表ツール</div>
+            <div className="landing-badge">建設業の現場のための無料ツール</div>
             <h1 className="landing-title">
-              Excelから卒業。<br />
-              <span className="landing-title-accent">工程表を、もっと速く。</span>
+              工程表を、もっと速く、<br />
+              <span className="landing-title-accent">もっと軽く。</span>
             </h1>
             <p className="landing-lead">
               個人事業主・中小企業の現場担当者向け。<br />
