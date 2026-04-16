@@ -1,0 +1,13 @@
+{
+  // Cloudflare Workers + Static Assets 用設定
+  // https://developers.cloudflare.com/workers/static-assets/
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "koutei-app",
+  "compatibility_date": "2025-01-01",
+  "assets": {
+    // npm run build の出力先 (Vite のデフォルト)
+    "directory": "./dist",
+    // SPA ルーティング対応: 不明なパスは index.html を返す
+    "not_found_handling": "single-page-application"
+  }
+}
