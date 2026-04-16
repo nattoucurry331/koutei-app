@@ -1,0 +1,410 @@
+.mobile-list {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--color-surface);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* === ヘッダー === */
+.m-header {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 18px 18px 16px;
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.m-title {
+  width: 100%;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  outline: none;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  text-align: center;
+}
+.m-title:focus {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+}
+.m-title::placeholder {
+  color: var(--color-text-subtle);
+  font-weight: 500;
+}
+
+.m-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}
+.m-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.m-meta-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  width: 40px;
+  flex-shrink: 0;
+}
+.m-meta-input {
+  flex: 1;
+  border: 1px solid transparent;
+  background: var(--color-surface);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--color-text);
+  font-family: inherit;
+  outline: none;
+  min-width: 0;
+}
+.m-meta-input:focus {
+  background: white;
+  border-color: var(--color-primary);
+}
+.m-meta-input::placeholder {
+  color: var(--color-text-subtle);
+}
+.m-meta-date {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 130px;
+}
+.m-meta-sep {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.m-meta-period {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding-top: 4px;
+}
+
+/* === セクション === */
+.m-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.m-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.m-section-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: 0.02em;
+}
+.m-section-sub {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* === 本日 === */
+.m-today-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.m-today-card {
+  background: white;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+}
+.m-today-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.m-empty-card {
+  background: white;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 18px 14px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* === 工種カード === */
+.m-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.m-task-card {
+  background: white;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid;
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.m-task-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.m-task-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  outline: none;
+  min-width: 0;
+}
+.m-task-name:focus {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+}
+.m-task-color {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px var(--color-border);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.m-color-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+}
+.m-color-chip {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  padding: 0;
+}
+
+/* バー一覧 */
+.m-task-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.m-task-bars-empty {
+  font-size: 12px;
+  color: var(--color-text-subtle);
+  padding: 6px 8px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.m-bar-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.m-bar-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--color-text);
+  background: transparent;
+  min-width: 0;
+}
+.m-bar-info:hover {
+  background: rgba(79, 70, 229, 0.06);
+}
+.m-bar-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.m-bar-dates {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--color-text);
+}
+.m-bar-days {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  background: white;
+  padding: 2px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.m-bar-delete {
+  width: 36px;
+  font-size: 16px;
+  color: var(--color-text-subtle);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.m-bar-delete:hover {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+/* バー追加フォーム */
+.m-bar-form {
+  background: var(--color-primary-soft);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.m-bar-form-inline {
+  background: var(--color-surface);
+}
+.m-bar-form-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.m-bar-form-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  width: 36px;
+  flex-shrink: 0;
+}
+.m-bar-form-input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: white;
+  font-size: 14px;
+  font-family: inherit;
+}
+.m-bar-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+.m-add-bar-btn {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px dashed var(--color-border-strong);
+  background: transparent;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.m-add-bar-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+/* タスクアクション */
+.m-task-actions {
+  display: flex;
+  gap: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border);
+}
+.m-task-action-btn {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background: transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.m-task-action-btn:hover:not(:disabled) {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.m-task-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.m-task-action-delete:hover:not(:disabled) {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+/* === 備考 === */
+.m-memo {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  background: white;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--color-text);
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  white-space: pre-wrap;
+}
+.m-memo:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+}
+
+/* PDFヒント */
+.m-pdf-hint {
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-subtle);
+  margin: 12px 0 4px;
+  padding: 12px;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}

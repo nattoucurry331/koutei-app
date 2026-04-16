@@ -5,8 +5,30 @@ import { uid } from '../../utils/storage';
 import { TASK_PRESETS } from '../../utils/presets';
 import { formatJPLong, diffDays } from '../../utils/dates';
 import { GanttChart } from '../GanttChart/GanttChart';
+import { MobileTaskList } from '../MobileTaskList/MobileTaskList';
 import { ShareExport } from '../ShareExport/ShareExport';
 import './ProjectEditor.css';
+
+// 画面幅監視 (CSS @media と同期)
+function useIsMobile(breakpoint = 720): boolean {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth <= breakpoint;
+  });
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth <= breakpoint);
+    update();
+    window.addEventListener('resize', update);
+    // matchMedia は OS のフォントサイズ変更等にも反応する
+    const mq = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    mq.addEventListener('change', update);
+    return () => {
+      window.removeEventListener('resize', update);
+      mq.removeEventListener('change', update);
+    };
+  }, [breakpoint]);
+  return isMobile;
+}
 
 // PDFPreview は jsPDF + html2canvas を含むので遅延ロード
 const PDFPreview = lazy(() =>
@@ -31,6 +53,7 @@ export function ProjectEditor({ project, onChange }: Props) {
   const [showShare, setShowShare] = useState(false);
   const printAreaRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLTextAreaElement>(null);
+  const isMobile = useIsMobile(720);
 
   // タイトル: 内容変更時に高さ調整
   useEffect(() => {
@@ -94,21 +117,25 @@ export function ProjectEditor({ project, onChange }: Props) {
       {/* === 編集ツールバー (PDFには出ない) === */}
       <div className="editor-toolbar">
         <div className="editor-toolbar-left">
-          <button className="btn btn-primary btn-sm" onClick={handleAddTask}>
-            + 工種を追加
-          </button>
-          <div className="unit-switch" role="tablist" aria-label="表示単位">
-            {(['day', 'half', 'week'] as TimeUnit[]).map((u) => (
-              <button
-                key={u}
-                role="tab"
-                className={'unit-switch-btn' + (unit === u ? ' is-active' : '')}
-                onClick={() => handleUnitChange(u)}
-              >
-                {u === 'day' ? '日' : u === 'half' ? '半日' : '週'}
+          {!isMobile && (
+            <>
+              <button className="btn btn-primary btn-sm" onClick={handleAddTask}>
+                + 工種を追加
               </button>
-            ))}
-          </div>
+              <div className="unit-switch" role="tablist" aria-label="表示単位">
+                {(['day', 'half', 'week'] as TimeUnit[]).map((u) => (
+                  <button
+                    key={u}
+                    role="tab"
+                    className={'unit-switch-btn' + (unit === u ? ' is-active' : '')}
+                    onClick={() => handleUnitChange(u)}
+                  >
+                    {u === 'day' ? '日' : u === 'half' ? '半日' : '週'}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           <button className="btn btn-sm" onClick={() => setShowPresets(true)}>
             📋 プリセット
           </button>
@@ -117,14 +144,21 @@ export function ProjectEditor({ project, onChange }: Props) {
           <button className="btn btn-sm" onClick={() => setShowShare(true)}>
             📤 共有書き出し
           </button>
-          <button className="btn btn-sm btn-primary" onClick={() => setShowPDF(true)}>
-            🖨 PDF出力
-          </button>
+          {!isMobile && (
+            <button className="btn btn-sm btn-primary" onClick={() => setShowPDF(true)}>
+              🖨 PDF出力
+            </button>
+          )}
         </div>
       </div>
 
-      {/* === 印刷エリア (これがPDFになる) === */}
-      <div className="print-area-scroll">
+      {/* === スマホ縦画面: タスクリスト表示 === */}
+      {isMobile && (
+        <MobileTaskList project={project} onChange={onChange} onAddTask={handleAddTask} />
+      )}
+
+      {/* === 印刷エリア (これがPDFになる; モバイルでは非表示) === */}
+      <div className="print-area-scroll" hidden={isMobile}>
         <div ref={printAreaRef} className="print-area">
           {/* 印刷ヘッダー */}
           <header className="print-header">
