@@ -9,9 +9,10 @@ interface Props {
   project: Project;
   onChange: (project: Project) => void;
   onAddTask: () => void;
+  onBulkAdd?: () => void;
 }
 
-export function MobileTaskList({ project, onChange, onAddTask }: Props) {
+export function MobileTaskList({ project, onChange, onAddTask, onBulkAdd }: Props) {
   const todayStr = today();
 
   const updateField = <K extends keyof Project>(key: K, value: Project[K]) => {
@@ -101,9 +102,16 @@ export function MobileTaskList({ project, onChange, onAddTask }: Props) {
       <section className="m-section">
         <div className="m-section-header">
           <h3 className="m-section-title">📋 工種一覧 ({project.tasks.length}件)</h3>
-          <button className="btn btn-primary btn-sm" onClick={onAddTask}>
-            + 追加
-          </button>
+          <div className="m-section-actions">
+            {onBulkAdd && (
+              <button className="btn btn-sm" onClick={onBulkAdd} title="まとめて追加">
+                📝 一括
+              </button>
+            )}
+            <button className="btn btn-primary btn-sm" onClick={onAddTask}>
+              + 追加
+            </button>
+          </div>
         </div>
         {project.tasks.length === 0 ? (
           <div className="m-empty-card">「+ 追加」から工種を作成してください</div>
@@ -212,17 +220,43 @@ function TaskCard({
 }: TaskCardProps) {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [addingBar, setAddingBar] = useState(false);
-  const [newStart, setNewStart] = useState(projectStartDate);
-  const [newEnd, setNewEnd] = useState(addDays(projectStartDate || today(), 2));
+  const [newStart, setNewStart] = useState('');
+  const [newEnd, setNewEnd] = useState('');
+
+  /** スマート連結: 既存バーがあれば最終日翌日から、なければ工期開始から */
+  const handleStartAdd = () => {
+    const lastBar = task.bars[task.bars.length - 1];
+    let defaultStart: string;
+    let defaultDuration: number;
+    if (lastBar) {
+      defaultStart = addDays(lastBar.endDate, 1);
+      defaultDuration = diffDays(lastBar.startDate, lastBar.endDate) + 1;
+    } else {
+      defaultStart = projectStartDate || today();
+      defaultDuration = 3;
+    }
+    setNewStart(defaultStart);
+    setNewEnd(addDays(defaultStart, defaultDuration - 1));
+    setAddingBar(true);
+  };
+
+  /** クイック期間: N日間 (両端含む) → endDate = startDate + N - 1 */
+  const setQuickPeriod = (days: number) => {
+    if (!newStart) return;
+    setNewEnd(addDays(newStart, days - 1));
+  };
 
   const handleAdd = () => {
     if (!newStart || !newEnd) return;
     onAddBar(newStart, newEnd);
     setAddingBar(false);
-    // Next default: 翌日から
-    setNewStart(addDays(newEnd, 1));
-    setNewEnd(addDays(newEnd, 3));
+    // 連続入力サポート: stateリセット (次回の handleStartAdd で再計算)
+    setNewStart('');
+    setNewEnd('');
   };
+
+  const newPeriodDays =
+    newStart && newEnd ? Math.max(1, diffDays(newStart, newEnd) + 1) : 0;
 
   return (
     <div className="m-task-card" style={{ borderLeftColor: task.color }}>
@@ -295,6 +329,25 @@ function TaskCard({
               onChange={(e) => setNewEnd(e.target.value)}
             />
           </div>
+          {/* クイック期間ボタン */}
+          <div className="m-quick-period">
+            <span className="m-quick-period-label">期間</span>
+            {[1, 2, 3, 5, 7, 14].map((d) => (
+              <button
+                key={d}
+                type="button"
+                className={
+                  'm-quick-chip' + (newPeriodDays === d ? ' is-active' : '')
+                }
+                onClick={() => setQuickPeriod(d)}
+              >
+                {d === 7 ? '1週間' : d === 14 ? '2週間' : `${d}日`}
+              </button>
+            ))}
+          </div>
+          {newPeriodDays > 0 && (
+            <div className="m-bar-form-summary">📅 {newPeriodDays}日間</div>
+          )}
           <div className="m-bar-form-actions">
             <button className="btn btn-sm" onClick={() => setAddingBar(false)}>
               キャンセル
@@ -305,8 +358,11 @@ function TaskCard({
           </div>
         </div>
       ) : (
-        <button className="m-add-bar-btn" onClick={() => setAddingBar(true)}>
+        <button className="m-add-bar-btn" onClick={handleStartAdd}>
           + 期間を追加
+          {task.bars.length > 0 && (
+            <span className="m-add-bar-hint">前のバーの翌日から自動セット</span>
+          )}
         </button>
       )}
 

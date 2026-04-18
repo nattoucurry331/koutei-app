@@ -332,7 +332,7 @@
 }
 .m-add-bar-btn {
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border: 1px dashed var(--color-border-strong);
   background: transparent;
   border-radius: var(--radius-sm);
@@ -340,11 +340,71 @@
   color: var(--color-text-muted);
   cursor: pointer;
   transition: all 0.12s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 .m-add-bar-btn:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
   background: var(--color-primary-soft);
+}
+.m-add-bar-hint {
+  font-size: 10.5px;
+  color: var(--color-text-subtle);
+  font-weight: 400;
+}
+
+/* クイック期間ボタン */
+.m-quick-period {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: 4px;
+}
+.m-quick-period-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-right: 4px;
+}
+.m-quick-chip {
+  padding: 5px 10px;
+  font-size: 12px;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.m-quick-chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.m-quick-chip.is-active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  font-weight: 600;
+}
+
+.m-bar-form-summary {
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-primary-strong);
+  font-weight: 600;
+  background: white;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.m-section-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
 }
 
 /* タスクアクション */

@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react';
-import type { Project } from '../../types';
+import type { Project, Task } from '../../types';
+import { TASK_COLOR_PALETTE } from '../../types';
 import { downloadJSON, readJSONFile, uid } from '../../utils/storage';
 import { today, addDays, formatJPLong } from '../../utils/dates';
+import { PROJECT_TEMPLATES, findTemplate, type ProjectTemplate } from '../../utils/projectTemplates';
 import './ProjectList.css';
 
 interface Props {
@@ -14,44 +16,86 @@ interface Props {
 }
 
 interface NewProjectForm {
+  templateId: string;
   name: string;
   contractor: string;
   startDate: string;
   endDate: string;
 }
 
-const emptyForm: NewProjectForm = {
+const initialForm = (): NewProjectForm => ({
+  templateId: 'blank',
   name: '',
   contractor: '',
   startDate: today(),
   endDate: addDays(today(), 30),
-};
+});
+
+/** テンプレートを基にプロジェクトを生成 */
+function buildProjectFromTemplate(form: NewProjectForm, template: ProjectTemplate): Project {
+  const now = new Date().toISOString();
+  const tasks: Task[] = template.tasks.map((t, i) => ({
+    id: uid(),
+    name: t.name,
+    color: TASK_COLOR_PALETTE[i % TASK_COLOR_PALETTE.length],
+    bars: [
+      {
+        id: uid(),
+        startDate: addDays(form.startDate, t.startOffset),
+        endDate: addDays(form.startDate, t.startOffset + t.duration - 1),
+      },
+    ],
+  }));
+  return {
+    id: uid(),
+    name: form.name.trim(),
+    contractor: form.contractor.trim(),
+    startDate: form.startDate,
+    endDate: form.endDate,
+    tasks,
+    memo: '',
+    createdAt: now,
+    updatedAt: now,
+  };
+}
 
 export function ProjectList({ projects, onOpen, onCreate, onDelete, onImport, onDuplicate }: Props) {
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState<NewProjectForm>(emptyForm);
+  const [form, setForm] = useState<NewProjectForm>(initialForm);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleSelectTemplate = (templateId: string) => {
+    const tpl = findTemplate(templateId);
+    if (!tpl) return;
+    // 工期終了をテンプレートのデフォルト日数に合わせて自動更新
+    setForm((f) => ({
+      ...f,
+      templateId,
+      endDate: addDays(f.startDate, tpl.defaultDurationDays - 1),
+    }));
+  };
+
+  const handleStartDateChange = (newStart: string) => {
+    // 開始日変更時、テンプレートが選ばれていれば終了日も連動
+    setForm((f) => {
+      const tpl = findTemplate(f.templateId);
+      if (tpl && tpl.id !== 'blank') {
+        return { ...f, startDate: newStart, endDate: addDays(newStart, tpl.defaultDurationDays - 1) };
+      }
+      return { ...f, startDate: newStart };
+    });
+  };
 
   const handleSubmit = () => {
     if (!form.name.trim()) {
       alert('現場名を入力してください');
       return;
     }
-    const now = new Date().toISOString();
-    const project: Project = {
-      id: uid(),
-      name: form.name.trim(),
-      contractor: form.contractor.trim(),
-      startDate: form.startDate,
-      endDate: form.endDate,
-      tasks: [],
-      memo: '',
-      createdAt: now,
-      updatedAt: now,
-    };
+    const tpl = findTemplate(form.templateId) ?? findTemplate('blank')!;
+    const project = buildProjectFromTemplate(form, tpl);
     onCreate(project);
     setShowCreate(false);
-    setForm(emptyForm);
+    setForm(initialForm());
   };
 
   const handleImportClick = () => fileRef.current?.click();
@@ -210,9 +254,39 @@ export function ProjectList({ projects, onOpen, onCreate, onDelete, onImport, on
 
       {showCreate && (
         <div className="modal-backdrop" onClick={() => setShowCreate(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal create-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">新規工程表の作成</div>
             <div className="modal-body">
+              {/* テンプレート選択 */}
+              <div>
+                <label className="label">ベースを選ぶ</label>
+                <div className="template-grid">
+                  {PROJECT_TEMPLATES.map((tpl) => (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      className={
+                        'template-card' + (form.templateId === tpl.id ? ' is-selected' : '')
+                      }
+                      onClick={() => handleSelectTemplate(tpl.id)}
+                    >
+                      <div className="template-icon">{tpl.icon ?? '📄'}</div>
+                      <div className="template-name">{tpl.name}</div>
+                      <div className="template-meta">
+                        {tpl.tasks.length === 0
+                          ? '工種なし'
+                          : `${tpl.tasks.length}工種・約${tpl.defaultDurationDays}日`}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                {form.templateId !== 'blank' && (
+                  <div className="template-desc">
+                    {findTemplate(form.templateId)?.description}
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="label">現場名・工事名 *</label>
                 <input
@@ -239,7 +313,7 @@ export function ProjectList({ projects, onOpen, onCreate, onDelete, onImport, on
                     type="date"
                     className="input"
                     value={form.startDate}
-                    onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                    onChange={(e) => handleStartDateChange(e.target.value)}
                   />
                 </div>
                 <div style={{ flex: 1 }}>
@@ -258,7 +332,9 @@ export function ProjectList({ projects, onOpen, onCreate, onDelete, onImport, on
                 キャンセル
               </button>
               <button className="btn btn-primary" onClick={handleSubmit}>
-                作成
+                {findTemplate(form.templateId) && findTemplate(form.templateId)!.tasks.length > 0
+                  ? `作成 (${findTemplate(form.templateId)!.tasks.length}工種をセット)`
+                  : '作成'}
               </button>
             </div>
           </div>

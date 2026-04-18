@@ -7,6 +7,7 @@ import { formatJPLong, diffDays } from '../../utils/dates';
 import { GanttChart } from '../GanttChart/GanttChart';
 import { MobileTaskList } from '../MobileTaskList/MobileTaskList';
 import { ShareExport } from '../ShareExport/ShareExport';
+import { BulkTaskInput } from '../BulkTaskInput/BulkTaskInput';
 import './ProjectEditor.css';
 
 // 画面幅監視 (CSS @media と同期)
@@ -49,6 +50,7 @@ function formatDateShort(iso: string): string {
 
 export function ProjectEditor({ project, onChange }: Props) {
   const [showPresets, setShowPresets] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
   const [showPDF, setShowPDF] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const printAreaRef = useRef<HTMLDivElement>(null);
@@ -98,6 +100,17 @@ export function ProjectEditor({ project, onChange }: Props) {
     updateField('tasks', [...project.tasks, task]);
   };
 
+  const addTasksBulk = (names: string[]) => {
+    const baseIdx = project.tasks.length;
+    const newTasks: Task[] = names.map((name, i) => ({
+      id: uid(),
+      name,
+      color: TASK_COLOR_PALETTE[(baseIdx + i) % TASK_COLOR_PALETTE.length],
+      bars: [],
+    }));
+    updateField('tasks', [...project.tasks, ...newTasks]);
+  };
+
   const handleAddTask = () => addTaskWithName('新しい工種');
   const handleUpdateTasks = (tasks: Task[]) => updateField('tasks', tasks);
   const handleUnitChange = (u: TimeUnit) => updateField('unit', u);
@@ -139,6 +152,9 @@ export function ProjectEditor({ project, onChange }: Props) {
           <button className="btn btn-sm" onClick={() => setShowPresets(true)}>
             📋 プリセット
           </button>
+          <button className="btn btn-sm" onClick={() => setShowBulk(true)}>
+            📝 一括追加
+          </button>
         </div>
         <div className="editor-toolbar-right">
           <button className="btn btn-sm" onClick={() => setShowShare(true)}>
@@ -154,7 +170,12 @@ export function ProjectEditor({ project, onChange }: Props) {
 
       {/* === スマホ縦画面: タスクリスト表示 === */}
       {isMobile && (
-        <MobileTaskList project={project} onChange={onChange} onAddTask={handleAddTask} />
+        <MobileTaskList
+          project={project}
+          onChange={onChange}
+          onAddTask={handleAddTask}
+          onBulkAdd={() => setShowBulk(true)}
+        />
       )}
 
       {/* === 印刷エリア (これがPDFになる; モバイルでは非表示) === */}
@@ -301,6 +322,13 @@ export function ProjectEditor({ project, onChange }: Props) {
       )}
 
       {showShare && <ShareExport project={project} onClose={() => setShowShare(false)} />}
+
+      {showBulk && (
+        <BulkTaskInput
+          onClose={() => setShowBulk(false)}
+          onSubmit={(names) => addTasksBulk(names)}
+        />
+      )}
     </div>
   );
 }

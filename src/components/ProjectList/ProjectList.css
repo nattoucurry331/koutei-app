@@ -225,3 +225,59 @@
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
 }
+
+/* === 新規作成モーダル / テンプレート選択 === */
+.create-modal {
+  max-width: 600px;
+}
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+.template-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  background: white;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.12s;
+  text-align: center;
+}
+.template-card:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface);
+}
+.template-card.is-selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+.template-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+.template-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+.template-meta {
+  font-size: 10.5px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+}
+.template-desc {
+  margin-top: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-primary);
+}
