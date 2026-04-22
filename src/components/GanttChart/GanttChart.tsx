@@ -89,6 +89,16 @@ export function GanttChart({ startDate, endDate, tasks, unit, onTasksChange, tab
     );
   };
 
+  const updateBar = (taskId: string, barId: string, patch: Partial<Bar>) => {
+    onTasksChange(
+      tasks.map((t) =>
+        t.id === taskId
+          ? { ...t, bars: t.bars.map((b) => (b.id === barId ? { ...b, ...patch } : b)) }
+          : t
+      )
+    );
+  };
+
   // ドラッグ操作 (バー作成)
   const handleCellMouseDown = (taskId: string, idx: number, e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.gantt-bar')) return;
@@ -245,6 +255,7 @@ export function GanttChart({ startDate, endDate, tasks, unit, onTasksChange, tab
           onCellMouseDown={(idx, e) => handleCellMouseDown(task.id, idx, e)}
           onCellMouseEnter={(idx) => handleCellMouseEnter(task.id, idx)}
           onDeleteBar={(barId) => deleteBar(task.id, barId)}
+          onUpdateBar={(barId, patch) => updateBar(task.id, barId, patch)}
         />
       ))}
 
@@ -288,6 +299,7 @@ interface TaskRowProps {
   onCellMouseDown: (idx: number, e: React.MouseEvent) => void;
   onCellMouseEnter: (idx: number) => void;
   onDeleteBar: (barId: string) => void;
+  onUpdateBar: (barId: string, patch: Partial<Bar>) => void;
 }
 
 function TaskRow({
@@ -311,15 +323,118 @@ function TaskRow({
   onCellMouseDown,
   onCellMouseEnter,
   onDeleteBar,
+  onUpdateBar,
 }: TaskRowProps) {
   const [editingName, setEditingName] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [draggable, setDraggable] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
 
+  // === バードラッグ(移動・端リサイズ) ===
+  type BarDragMode = 'move' | 'resize-left' | 'resize-right';
+  interface BarDragState {
+    barId: string;
+    mode: BarDragMode;
+    startX: number;
+    origStartIdx: number;
+    origEndIdx: number;
+    currentStartIdx: number;
+    currentEndIdx: number;
+  }
+  const [barDrag, setBarDrag] = useState<BarDragState | null>(null);
+  const barDragRef = useRef<BarDragState | null>(null);
+  const hasDragMovedRef = useRef(false);
+  const setBarDragBoth = (d: BarDragState | null) => {
+    barDragRef.current = d;
+    setBarDrag(d);
+  };
+
   useEffect(() => {
     if (editingName) nameRef.current?.focus();
   }, [editingName]);
+
+  const startBarDrag = (
+    e: React.MouseEvent,
+    bar: Bar,
+    startIdx: number,
+    endIdx: number,
+    mode: BarDragMode
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    hasDragMovedRef.current = false;
+    setBarDragBoth({
+      barId: bar.id,
+      mode,
+      startX: e.clientX,
+      origStartIdx: startIdx,
+      origEndIdx: endIdx,
+      currentStartIdx: startIdx,
+      currentEndIdx: endIdx,
+    });
+  };
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      const drag = barDragRef.current;
+      if (!drag) return;
+      const dx = e.clientX - drag.startX;
+      if (Math.abs(dx) > 3) hasDragMovedRef.current = true;
+      const cellShift = Math.round(dx / colWidth);
+
+      let newStart = drag.origStartIdx;
+      let newEnd = drag.origEndIdx;
+      if (drag.mode === 'move') {
+        newStart = drag.origStartIdx + cellShift;
+        newEnd = drag.origEndIdx + cellShift;
+      } else if (drag.mode === 'resize-left') {
+        newStart = Math.min(drag.origEndIdx, drag.origStartIdx + cellShift);
+      } else {
+        newEnd = Math.max(drag.origStartIdx, drag.origEndIdx + cellShift);
+      }
+      // 範囲内にクランプ (移動時は両端を同時にシフトする)
+      if (newStart < 0) {
+        const adj = -newStart;
+        newStart += adj;
+        if (drag.mode === 'move') newEnd += adj;
+      }
+      if (newEnd > cells.length - 1) {
+        const adj = newEnd - (cells.length - 1);
+        newEnd -= adj;
+        if (drag.mode === 'move') newStart -= adj;
+      }
+      newStart = Math.max(0, newStart);
+      newEnd = Math.min(cells.length - 1, newEnd);
+      if (
+        newStart !== drag.currentStartIdx ||
+        newEnd !== drag.currentEndIdx
+      ) {
+        setBarDragBoth({ ...drag, currentStartIdx: newStart, currentEndIdx: newEnd });
+      }
+    };
+    const onUp = () => {
+      const drag = barDragRef.current;
+      if (!drag) return;
+      if (hasDragMovedRef.current) {
+        const range = cellRangeToBarDates(cells, drag.currentStartIdx, drag.currentEndIdx);
+        if (range) {
+          onUpdateBar(drag.barId, range);
+        }
+      }
+      setBarDragBoth(null);
+      // hasDragMovedRef は onClick が読み取った後にリセットされる
+      setTimeout(() => {
+        hasDragMovedRef.current = false;
+      }, 0);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cells, colWidth]);
 
   const barRanges = task.bars
     .map((bar) => {
@@ -462,22 +577,42 @@ function TaskRow({
             );
           })}
 
-          {barRanges.map(({ bar, startIdx, endIdx }) => (
-            <button
-              key={bar.id}
-              className="gantt-bar"
-              style={{
-                left: `${colWidth * startIdx + 2}px`,
-                width: `${colWidth * (endIdx - startIdx + 1) - 4}px`,
-                background: task.color,
-              }}
-              title={`${bar.startDate} 〜 ${bar.endDate}（クリックで削除）`}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (confirm('このバーを削除しますか?')) onDeleteBar(bar.id);
-              }}
-            />
-          ))}
+          {barRanges.map(({ bar, startIdx, endIdx }) => {
+            const activeDrag = barDrag && barDrag.barId === bar.id ? barDrag : null;
+            const renderStart = activeDrag ? activeDrag.currentStartIdx : startIdx;
+            const renderEnd = activeDrag ? activeDrag.currentEndIdx : endIdx;
+            return (
+              <button
+                key={bar.id}
+                className={'gantt-bar' + (activeDrag ? ' is-dragging' : '')}
+                style={{
+                  left: `${colWidth * renderStart + 2}px`,
+                  width: `${colWidth * (renderEnd - renderStart + 1) - 4}px`,
+                  background: task.color,
+                }}
+                title="ドラッグで移動 / 左右の端をつかんで伸縮 / クリックで削除"
+                onMouseDown={(e) => startBarDrag(e, bar, startIdx, endIdx, 'move')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // ドラッグで動かした直後は削除を抑制
+                  if (hasDragMovedRef.current) {
+                    hasDragMovedRef.current = false;
+                    return;
+                  }
+                  if (confirm('このバーを削除しますか?')) onDeleteBar(bar.id);
+                }}
+              >
+                <span
+                  className="gantt-bar-handle gantt-bar-handle-left"
+                  onMouseDown={(e) => startBarDrag(e, bar, startIdx, endIdx, 'resize-left')}
+                />
+                <span
+                  className="gantt-bar-handle gantt-bar-handle-right"
+                  onMouseDown={(e) => startBarDrag(e, bar, startIdx, endIdx, 'resize-right')}
+                />
+              </button>
+            );
+          })}
           {draftRange && (
             <div
               className="gantt-bar-draft"

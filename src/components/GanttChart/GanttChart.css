@@ -202,15 +202,55 @@
   height: calc(var(--row-height) - 12px);
   border-radius: 4px;
   border: none;
-  cursor: pointer;
+  cursor: grab;
   box-shadow: var(--shadow-sm);
-  transition: transform 0.1s, box-shadow 0.1s;
+  transition: box-shadow 0.1s, filter 0.1s;
   z-index: 1;
+  padding: 0;
+  overflow: visible;
 }
 .gantt-bar:hover {
-  transform: translateY(-1px);
   box-shadow: var(--shadow-md);
   filter: brightness(1.05);
+}
+.gantt-bar:active {
+  cursor: grabbing;
+}
+.gantt-bar.is-dragging {
+  cursor: grabbing;
+  opacity: 0.85;
+  z-index: 10;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  filter: brightness(1.08);
+  transition: none;
+}
+
+/* リサイズハンドル(左右の端) */
+.gantt-bar-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  z-index: 2;
+  background: transparent;
+  transition: background 0.12s;
+}
+.gantt-bar-handle-left {
+  left: -3px;
+  border-radius: 4px 0 0 4px;
+}
+.gantt-bar-handle-right {
+  right: -3px;
+  border-radius: 0 4px 4px 0;
+}
+.gantt-bar:hover .gantt-bar-handle {
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.gantt-bar-handle:hover {
+  background: rgba(255, 255, 255, 0.55) !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2) !important;
 }
 .gantt-bar-draft {
   position: absolute;
